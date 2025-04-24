@@ -2,97 +2,89 @@
 const express = require("express");
 //function to connect to mongodb databse
 const connectDB = require("./config/database");
+const bcrypt=require('bcrypt')
+const validator=require('validator')
+const jwt=require('jsonwebtoken')
+const {userAuth}=require('./middlewares/auth.js')
 //express application instance
 const app = express();
+
 //importing the User model-->use this to interact with the users collection in mongoDB
 const User = require("./models/user");
+const {validateSignupData}=require('./utils/validation');
+const cookieParser = require("cookie-parser");
+
 //to parse incoming JSON data in the req body without this req.body will be undefined
 app.use(express.json());
+app.use(cookieParser())
+
+app.get("/profile",userAuth,async(req,res)=>{
+  //whenever my profile api is called I want to validate my cookie
+  try{
+  const user=req.user
+  
+  res.send(user)
+  }catch(error){
+    res.status(400).send("ERROR "+error.message)
+  }
+})
+
+app.post("/login",async(req,res)=>{
+  try{
+    const {emailId,password}=req.body
+
+    const user=await User.findOne({emailId:emailId});
+    if(!user){
+      throw new Error("Invalid credentials")
+    }
+
+    const isPasswordValid=bcrypt.compare(password,user.password)
+
+    if(isPasswordValid){
+      //Create  JWT Token
+
+      const token=await jwt.sign({_id:user._id},"DEV@Tinder$790");
+      //Add the token to cookie and send the response back to the user
+      res.cookie("token",token)
+      res.send("User logged in successfully")
+    }else{
+      throw new Error("Invalid credentials")
+    }
+    
+  }catch(error){
+    console.log("Error in login controller",error.message);
+    res.status(400).send("ERROR: "+error.message)
+    
+  }
+})
 
 app.post("/signup", async (req, res) => {
-  //creating the new instance of the userModel
-  const user = new User(req.body);
 
+
+  //creating the new instance of the userModel
+  
   try {
+    validateSignupData(req);
+    const {firstName,lastName,emailId,password}=req.body
+    const passwordHash=await bcrypt.hash(password,10)
+   
+    
+    const user = new User({firstName,lastName,emailId,password:passwordHash});
     //saving the user in db collection
     await user.save();
     res.send("user added successfully");
   } catch (err) {
-    throw new Error("Update not allowed")
+    res.status(400).send("ERROR: "+err.message)
 
 }
 });
-//Get user by email
-app.get("/user", async (req, res) => {
-  const userEmail = req.body.emailId;
-  try {
-    //    const users= await User.find({emailId:userEmail})//gets all the peeps with this email id
-    //       if(users.length===0){
-    //         res.status(404).send("user not found");
-    //       }else{
-    //          res.send(users)
-    //       }
-    //emailId-->the same spelling should be in the defined schems, even though if you have a typo in it mongoose will ignore it-->you'll have a hard time debugging so be careful
-    const user = await User.findOne();
+app.post("/sendConnection/Request",async(req,res)=>{
+  console.log("Sending a connection request");
 
-    if (!user) {
-      res.status(404).send("User not found");
-    } else {
-      res.send(user);
-    }
-  } catch (err) {
-    res.status(400).send("Something went wrong");
-  }
-});
-//Feed API- GET /feed-get all the users from the database
-app.get("/feed", async (req, res) => {
-  try {
-    const users = await User.find({}); //passing and empty filter gets all the users back to you
-    res.send(users);
-  } catch (err) {
-    res.status(404).send("Something went wrong");
-  }
-});
-app.delete("/user", async (req, res) => {
-  const userId = req.body.userId;
-  try {
-    const user = await User.findByIdAndDelete({ _id: userId });
-    // const user=await User.findByIdAndDelete(userId);
-    if (user) {
-      res.send("User deleted successfully");
-    } else {
-      res.send("User not found");
-    }
-  } catch (err) {
-    res.status(400).send("Something went wrong");
-  }
-});
-app.patch("/user/:userId", async (req, res) => {
-  const userId = req.params?.userId;
-  const data = req.body;
-  try {
-    const ALLOWED_UPDATES = [ "photoUrl", "about", "gender", "age","skills"];
-    //making sure that every key is present in the ALLOWED_UPDATES
-    const isUpdateAllowed = Object.keys(data).every((k) =>
-      ALLOWED_UPDATES.includes(k)
-    );
-    if (!isUpdateAllowed) {
-      res.status(400).send("update not allowed");
-    } 
-        if(data?.skills.length>10){
-            throw new Error("Skills cannot be more than 10")
-        }
-    const user = await User.findByIdAndUpdate({ _id: userId }, data, {
-      returnDocument: "after",
-      runValidators: true,
-    });
-    console.log(user);
-    
-    res.send(`${user} updated succcessfully`);
-  } catch (err) {
-    res.status(400).send("UPDATE FALIED:" + err.message);
-  }
-});
+  res.send("connection Request sent")
+  
+
+})
 connectDB()
   .then(() => {
     console.log("Database connection established");
