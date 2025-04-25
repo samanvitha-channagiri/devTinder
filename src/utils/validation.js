@@ -13,5 +13,16 @@ const validateSignupData=(req)=>{
     }
 
 }
+const validateEditProfileData=(req)=>{
+    const allowedEditFields=["firstName","lastName","emailId","gender","age","about","skills"
+    ]
+    const isEditAllowed=Object.keys(req.body).every(field=>allowedEditFields.includes(field));
+    if(req.emailId&&!validator.isEmail(req.emailId)){
+        throw new Error("Enter a valid email Id")
 
-module.exports={validateSignupData}
+    }
+   
+    return isEditAllowed
+}
+
+module.exports={validateSignupData,validateEditProfileData}

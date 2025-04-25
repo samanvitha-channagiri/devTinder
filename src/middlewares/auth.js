@@ -3,7 +3,6 @@ const User=require('../models/user.js')
 
 const userAuth=async (req,res,next)=>{
    //Read the token from the req cookies
- 
 
   try{
    const {token}=req.cookies
