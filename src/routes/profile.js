@@ -37,7 +37,8 @@ profileRouter.get("/profile/view", userAuth, async (req, res) => {
     }
 
   })
-
+  
+//forgot password API
   profileRouter.patch("/profile/password",userAuth,async(req,res)=>{
    try{
     const {oldPassword,newPassword}=req.body;
