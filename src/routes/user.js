@@ -43,18 +43,61 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
     })
       .populate("fromUserId", USER_SAFE_DATA)
       .populate("toUserId", USER_SAFE_DATA);
-
     const data = connectionRequests.map((row) =>{
         if(row.fromUserId._id.toString()===loggedInUser._id.toString()){
             return row.toUserId
         }
         return row.fromUserId
     });
-
     res.json({ message: "YouR accepted connection requests are", data });
   } catch (error) {
     res.status(400).send("ERROR :" + error.message);
   }
 });
+userRouter.get('/feed',userAuth,async (req,res)=>{
+    try{
+        
+       
+        const loggedInUser=req.user
+
+        const page=parseInt(req.query.page)||1;
+        let limit=parseInt(req.query.limit)||10;
+        limit=limit>50?50:limit
+        const skip=(page-1)*limit;
+        
+        //find all the connection requests  either the user have sent or recieved
+        const connectionRequests=await  ConnectionRequest.find({
+            $or:[
+                {fromUserId:loggedInUser._id},
+                {toUserId:loggedInUser._id}
+            ]
+        }).select("fromUserId toUserId")
+        const hideUsersFromFeed=new Set();
+        connectionRequests.forEach(req=>{
+            hideUsersFromFeed.add(req.fromUserId.toString())
+            hideUsersFromFeed.add(req.toUserId.toString())
+        })
+        
+        const users=await User.find({
+        $and:[   { _id:{$nin:Array.from(hideUsersFromFeed)}},
+            {_id:{$ne:loggedInUser._id}}
+        ],
+        }).select(USER_SAFE_DATA).skip(skip).limit(limit)
+        
+        res.send(users)
+    }
+    catch(error){
+        res.status(400).json({message:error.message})
+
+    }
+})
 
 module.exports = userRouter;
+
+
+//FOR THE FEED API
+ //user should see all the cards except
+        //0.his own card
+        //1.his connections already accepted
+        //3.ignored people
+        //4.already sent the connection request
