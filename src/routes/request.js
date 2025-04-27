@@ -64,5 +64,42 @@ requestRouter.post("/request/send/:status/:toUserId", userAuth, async (req, res)
   
    
   });
+//existing connection interested state alli ide andre, matra accept or reject madak agadu
+//ond sala ignore maddre matte request kalsak agadilla
+//yarara request kalsdaga, reciever ig ad barbeku, avn adna click maddaga, i url open agatte.. url alli status and requestId iratte??
 
+requestRouter.post("/request/review/:status/:requestId",userAuth,async (req,res,next)=>{
+  try{
+    const loggedInUser=req.user;
+    const {status,requestId}=req.params
+
+    //validating the status
+    const allowedStatus=["accepted","rejected"]
+    if(!allowedStatus.includes(status)){
+      return res.status(400).json({message:"status not allowed"})
+    }
+    const connectionRequest=await ConnectionRequest.findOne({
+      _id:requestId,
+      toUserId:loggedInUser._id,
+      status:"interested"
+    })
+
+
+    if(!connectionRequest){
+      return res.status(400).json({message:"Connection request does not exist"})
+    }
+
+
+    connectionRequest.status=status
+
+   const data=await connectionRequest.save()
+
+   res.json({message:"Connection request "+status,data})
+
+  }catch(error){
+  res.status(400).send("ERROR :"+error.message)
+  }
+
+
+})
   module.exports=requestRouter;
