@@ -14,13 +14,16 @@ const validateSignupData=(req)=>{
 
 }
 const validateEditProfileData=(req)=>{
-    const allowedEditFields=["firstName","lastName","emailId","gender","age","about","skills"
+    const allowedEditFields=["firstName","lastName","emailId","gender","age","about","skills","photoUrl"
     ]
     const isEditAllowed=Object.keys(req.body).every(field=>allowedEditFields.includes(field));
+
     if(req.emailId&&!validator.isEmail(req.emailId)){
         throw new Error("Enter a valid email Id")
 
     }
+    console.log(isEditAllowed);
+    
    
     return isEditAllowed
 }
