@@ -22,7 +22,7 @@ const validateEditProfileData=(req)=>{
         throw new Error("Enter a valid email Id")
 
     }
-    console.log(isEditAllowed);
+ 
     
    
     return isEditAllowed

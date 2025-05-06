@@ -19,7 +19,7 @@ userRouter.get("/user/requests/received", userAuth, async (req, res, next) => {
 
     // .populate("fromUserId", ["firstName", "lastName"]);
 
-    res.json({ message: "Data fetched successfully", connectionRequests });
+    res.json({ message: "Data fetched successfully",data: connectionRequests });
   } catch (error) {
     res.statusCode(400).send("ERROR :" + error.message);
   }

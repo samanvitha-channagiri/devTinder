@@ -11,11 +11,15 @@ requestRouter.post(
   userAuth,
   async (req, res) => {
     try {
+     
+      
       const fromUserId = req.user._id; //one who is logged in is sending the connection request
       const toUserId = req.params.toUserId;
       const status = req.params.status;
 
       const allowedStatus = ["ignored", "interested"];
+      
+      
 
       if (!allowedStatus.includes(status)) {
         return res
